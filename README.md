@@ -60,7 +60,9 @@ mux.HandleFunc("/ip",func(w http.ResponseWriter, r *http.Request) {
 ```
 This creates a page "/ip" that shows the public ip address (with port) of the client that accessed the site.
 
-## Bugs
+## Bugs / Contributing
+
+You can contribute by creating a pull request.
 
 If you have found any bugs, please open an issue.
 
