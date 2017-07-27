@@ -1,4 +1,4 @@
-SOURCES = args.go settings.go main.go utils.go handler.go
+SOURCES = args.go settings.go main.go handler.go
 
 EX = ecserv
 FINAL = ${EX}
