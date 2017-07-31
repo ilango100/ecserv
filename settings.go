@@ -7,14 +7,15 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"path/filepath"
 )
 
 func init() {
 
-	if ok, err := loadSettings(); ok {
+	ok, err := loadSettings()
 		//Settings file done
 
-	} else if os.IsNotExist(err) {
+	if !ok && os.IsNotExist(err) {
 		//First start, run wizard
 		firstStart()
 	} else {
@@ -28,10 +29,6 @@ func init() {
 }
 
 func firstStart() {
-
-	if s {
-		log.Fatalln("Silent mode without settings file invalid")
-	}
 
 	var c int
 
@@ -74,6 +71,7 @@ func firstStart() {
 		//root dir
 		fmt.Print("Enter root directory...")
 		fmt.Scan(&set.Root)
+		set.Root = filepath.Clean(set.Root)
 
 		//email
 		getMail()
@@ -123,14 +121,11 @@ func firstStart() {
 func wrongDir(str string) bool {
 	if inf, err := os.Stat(str); err != nil {
 		if os.IsNotExist(err) {
-			//not silent, so ask first
-			if !s {
-				fmt.Printf("Directory %s non-existing...\nCreate now? (Enter 1) ", str)
-				var c int
-				fmt.Scan(&c)
-				if c != 1 {
-					log.Fatal("Try again...", c)
-				}
+			fmt.Printf("Directory %s non-existing...\nCreate now? (Enter 1) ", str)
+			var c int
+			fmt.Scan(&c)
+			if c != 1 {
+				log.Fatal("Try again...", c)
 			}
 			//Try to creat dir
 			if err = os.Mkdir(str, 0755); err != nil {

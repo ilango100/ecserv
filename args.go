@@ -6,9 +6,6 @@ import (
 )
 
 func init() {
-	//silent mode flag
-	flag.BoolVar(&s, "s", false, "Run EcServ webserver silently")
-
 	//specify ecset file
 	flag.StringVar(&isfile, "f", "ecset", "The settings file")
 

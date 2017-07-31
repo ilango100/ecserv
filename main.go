@@ -8,9 +8,6 @@ import (
 	"net/http"
 )
 
-//Create global varibles to store arg values
-var s bool
-
 //settings variables
 var set struct {
 	Root   string `json:"root"`
