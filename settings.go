@@ -157,20 +157,19 @@ func getDomain() {
 
 func loadSettings() (bool, error) {
 	//try to open settings file
+	var err error
 	if ecset, err := os.Open(isfile); err == nil {
 
 		//if opens decode it
 		setr := json.NewDecoder(ecset)
 		if err = setr.Decode(&set); err != nil && err != io.EOF {
 			return false, err
-		} else {
-			ecset.Close()
-			return true, nil
 		}
+		ecset.Close()
+		return true, nil
 
-	} else {
-		return false, err
 	}
+	return false, err
 }
 
 func invalidSettings() (wrong bool) {

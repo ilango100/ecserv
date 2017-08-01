@@ -65,8 +65,7 @@ func tosPrompt(url string) bool {
 	fmt.Scan(&in)
 	if in == "y" || in == "yes" {
 		return true
-	} else {
-		fmt.Println("Not accepted...")
-		return false
 	}
+	fmt.Println("Not accepted...")
+	return false
 }
