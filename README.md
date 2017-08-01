@@ -1,5 +1,5 @@
 # EcServ
-![Travis-ci build status](https://travis-ci.org/ilango100/ecserv.svg?branch=master)
+[![Build Status](https://travis-ci.org/ilango100/ecserv.svg?branch=master)](https://travis-ci.org/ilango100/ecserv) build status](https://travis-ci.org/ilango100/ecserv.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ilango100/ecserv)](https://goreportcard.com/report/github.com/ilango100/ecserv)
 
 **EcServ** is a very simple, but very flexible webserver with automated SSL Certificate acquisition using Go.
 
@@ -22,7 +22,7 @@ make
 ```
 It will automatically start the setup process in interactive mode, i.e. it asks for you to set the intial values.
 
-After setup if you need to edit any settings, just edit the .ecserv file in the source file directory:
+After setup if you need to edit any settings, just edit the ecset file in the source file directory:
 ```
 {
  "root": "C:\\Users\\<username>\\EcServ",
