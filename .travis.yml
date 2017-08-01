@@ -1,2 +1,5 @@
 language: go
 
+install:
+ go get golang.org/x/crypto/acme/autocert
+
