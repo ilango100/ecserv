@@ -1,6 +1,7 @@
 # EcServ
+![Travis-ci build status](https://travis-ci.org/ilango100/ecserv.svg?branch=master)
 
-**EcServ** is a very simple, but very flexible webserver using Go.
+**EcServ** is a very simple, but very flexible webserver with automated SSL Certificate acquisition using Go.
 
 ## Features of EcServ
 
@@ -13,6 +14,7 @@ First install Go tools from [Golang](http://golang.org) and setup the configurat
 Then,
 
 ```
+go get golang.org/x/crypto/acme/autocert
 go get github.com/ilango100/ecserv
 cd $GOPATH/src/github.com/iango100/ecserv
 make
