@@ -1,5 +1,5 @@
 # EcServ
-[![Build Status](https://travis-ci.org/ilango100/ecserv.svg?branch=master)](https://travis-ci.org/ilango100/ecserv) build status](https://travis-ci.org/ilango100/ecserv.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/ilango100/ecserv)](https://goreportcard.com/report/github.com/ilango100/ecserv)
+[![Build Status](https://travis-ci.org/ilango100/ecserv.svg?branch=master)](https://travis-ci.org/ilango100/ecserv) [![Go Report Card](https://goreportcard.com/badge/github.com/ilango100/ecserv)](https://goreportcard.com/report/github.com/ilango100/ecserv)
 
 **EcServ** is a very simple, but very flexible webserver with automated SSL Certificate acquisition using Go.
 
