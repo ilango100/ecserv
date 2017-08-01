@@ -6,14 +6,14 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"path/filepath"
+	"regexp"
 )
 
 func init() {
 
 	ok, err := loadSettings()
-		//Settings file done
+	//Settings file done
 
 	if !ok && os.IsNotExist(err) {
 		//First start, run wizard
