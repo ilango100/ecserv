@@ -1,44 +1,38 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 	"time"
 )
 
-func genEtags(path string) error {
-	info, err := os.Stat(path)
+func genEtags(pth string) (map[string]string, error) {
+	info, err := os.Stat(pth)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if info.IsDir() {
-		files, _ := ioutil.ReadDir(path)
+		files, _ := ioutil.ReadDir(pth)
 		etags := make(map[string]string)
 		for _, file := range files {
 			if file.IsDir() {
-				if er := genEtags(filepath.Join(path, file.Name())); er != nil {
-					return er
+				var et map[string]string
+				var er error
+				if et, er = genEtags(path.Join(pth, file.Name())); er != nil {
+					return nil, er
 				}
-			} else if file.Name() == "etags.json" {
-				continue
+				for n, e := range et {
+					etags[path.Join(file.Name(), n)] = e
+				}
 			} else {
 				etags[file.Name()] = tTag(file.ModTime())
 			}
 		}
-		etf, err := os.Create(filepath.Join(path, "etags.json"))
-		if err != nil {
-			return err
-		}
-		enc := json.NewEncoder(etf)
-		enc.SetIndent("", " ")
-		enc.Encode(etags)
-		etf.Close()
-		return nil
+		return etags, nil
 	}
-	return errors.New("Not a directory")
+	return nil, errors.New("Not a directory")
 }
 
 func tTag(t time.Time) string {
