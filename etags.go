@@ -1,12 +1,30 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"os"
 	"path"
 	"time"
 )
+
+func genDeps(pth string) (map[string][]string,error) {
+	depfilename := path.Join(pth, "deps.json")
+	if inf, err := os.Stat(depfilename); err != nil && !inf.IsDir() {
+		return nil,err
+	}
+	deps := make(map[string][]string)
+	depfile, err := os.Open(depfilename)
+	if err != nil {
+		return nil,err
+	}
+	dec := json.NewDecoder(depfile)
+	if err := dec.Decode(&deps); err != nil {
+		return nil,err
+	}
+	return deps,nil
+}
 
 func genEtags(pth string) (map[string]string, error) {
 	info, err := os.Stat(pth)
