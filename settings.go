@@ -18,8 +18,6 @@ func init() {
 	if !ok && os.IsNotExist(err) {
 		//First start, run wizard
 		firstStart()
-	} else {
-		log.Fatalln("Error reading settings file...", err)
 	}
 
 	//finally settings will be loaded
