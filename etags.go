@@ -9,21 +9,31 @@ import (
 	"time"
 )
 
-func genDeps(pth string) (map[string][]string,error) {
+func genDeps(pth string) (map[string][]string, error) {
 	depfilename := path.Join(pth, "deps.json")
 	if inf, err := os.Stat(depfilename); err != nil && !inf.IsDir() {
-		return nil,err
+		return nil, err
 	}
 	deps := make(map[string][]string)
 	depfile, err := os.Open(depfilename)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	dec := json.NewDecoder(depfile)
 	if err := dec.Decode(&deps); err != nil {
-		return nil,err
+		return nil, err
 	}
-	return deps,nil
+
+	//prepend global deps to others
+	globdeps, ok := deps["global"]
+	if ok {
+		delete(deps, "global")
+		for i := range deps {
+			deps[i] = append(deps[i], globdeps...)
+		}
+	}
+
+	return deps, nil
 }
 
 func genEtags(pth string) (map[string]string, error) {
