@@ -9,6 +9,29 @@ import (
 	"time"
 )
 
+func depEtags(pth string) (map[string]string, error) {
+	deps, err := genDeps(pth)
+	if err != nil {
+		return nil, err
+	}
+
+	etags, err := genEtags(pth)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range etags {
+		dep, ok := deps[i]
+		if ok {
+			for _, val := range dep {
+				etags[i] += etags[val]
+			}
+		}
+	}
+
+	return etags, nil
+}
+
 func genDeps(pth string) (map[string][]string, error) {
 	depfilename := path.Join(pth, "deps.json")
 	if inf, err := os.Stat(depfilename); err != nil && !inf.IsDir() {
