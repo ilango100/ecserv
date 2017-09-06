@@ -1,3 +1,5 @@
+// +build  !capush
+
 package main
 
 import (
