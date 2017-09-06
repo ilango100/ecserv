@@ -22,6 +22,8 @@ make
 ```
 It will automatically start the setup process in interactive mode, i.e. it asks for you to set the intial values.
 
+When the server starts for the first time, make a request to the server. When the certificate is acquired for first time, it asks whether to accept terms; Accept it on first request, and the server is ready to go!
+
 After setup if you need to edit any settings, just edit the ecset file in the source file directory:
 ```
 {
