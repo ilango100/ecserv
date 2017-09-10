@@ -14,10 +14,10 @@ First install Go tools from [Golang](http://golang.org) and setup the configurat
 Then,
 
 ```
-go get golang.org/x/crypto/acme/autocert
 go get github.com/ilango100/ecserv
 cd $GOPATH/src/github.com/iango100/ecserv
-make
+go get
+go build
 ./ecserv
 ```
 It will automatically start the setup process in interactive mode, i.e. it asks for you to set the intial values.
