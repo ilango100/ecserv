@@ -3,9 +3,10 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"net/http"
+
+	"golang.org/x/crypto/acme/autocert"
 )
 
 //settings variables
@@ -52,8 +53,13 @@ func main() {
 
 func httpServ() {
 	serv := &http.Server{
-		Addr:    ":http",
-		Handler: http.RedirectHandler("https://"+set.Domain, 301),
+		Addr: ":http",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			loc := "https://" + set.Domain + r.URL.String()
+			w.Header().Set("Location", loc)
+			w.WriteHeader(301)
+			w.Write([]byte(loc))
+		}),
 	}
 
 	serv.ListenAndServe()
