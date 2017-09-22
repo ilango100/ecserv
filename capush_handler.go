@@ -5,8 +5,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
+	"path"
 )
 
 type CAPHandler struct {
@@ -33,10 +35,13 @@ func (c *CAPHandler) PushDeps(rw http.ResponseWriter, filename string) {
 		if noerr {
 			for _, dep := range deps {
 				p.Push("/"+dep, nil)
-				fmt.Println("Pushed", dep)
 			}
 		}
 	}
+}
+
+func (c *CAPHandler) MimeType(filename string) string {
+	return mime.TypeByExtension(path.Ext(filename))
 }
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -49,7 +54,30 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		c.NotFoundHandler.ServeHTTP(rw, req)
 
 	} else /*found*/ {
-		rw.Write([]byte(etag))
+		oldetag, etf := req.Header["If-None-Match"]
+
+		//Fresh send
+		if !etf {
+			c.PushDeps(rw, filename)
+
+			//Write headers
+			rw.Header().Set("etag", etag)
+			rw.Header().Set("cache-control", "public, max-age=172800")
+
+			//Set content type
+			mime := c.MimeType(filename)
+			if mime != "" {
+				rw.Header().Set("content-type", mime)
+			}
+
+			//Send file
+			rw.WriteHeader(200)
+			c.SendFile(rw, path.Join(set.Root, filename))
+
+		} else /*Check for update and send */ {
+			rw.WriteHeader(304)
+			rw.Write([]byte(oldetag[0]))
+		}
 	}
 }
 
@@ -64,7 +92,7 @@ func createHandler() http.Handler {
 	handler := &CAPHandler{
 		Etags:           ets,
 		Deps:            dep,
-		NotFoundHandler: http.NotFoundHandler,
+		NotFoundHandler: http.NotFoundHandler(),
 	}
 
 	return handler
