@@ -26,6 +26,19 @@ func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string) {
 	}
 }
 
+func (c *CAPHandler) PushDeps(rw http.ResponseWriter, filename string) {
+	deps, havedeps := c.Deps[filename]
+	if havedeps {
+		p, noerr := rw.(http.Pusher)
+		if noerr {
+			for _, dep := range deps {
+				p.Push("/"+dep, nil)
+				fmt.Println("Pushed", dep)
+			}
+		}
+	}
+}
+
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	//search for etag
 	filename := req.URL.Path[1:]
