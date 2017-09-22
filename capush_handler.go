@@ -4,12 +4,29 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 )
 
 type CAPHandler struct {
 	etags map[string]string
 	deps  map[string][]string
+}
+
+func (c *CAPHandler) Send(rw http.ResponseWriter, f io.Reader, etag string) {
+	rw.WriteHeader(200)
+	rw.Header().Set("etag", etag)
+	// Setting cache to for 2 days
+	rw.Header().Set("cache-control", "public, max-age=172800") //Delete this line if implementing non-static site
+	io.Copy(rw, fil)
+}
+
+func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string, etag string) {
+	f, err := os.Open(file)
+	if err == nil {
+		c.Send(rw, f, etag)
+	}
 }
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
