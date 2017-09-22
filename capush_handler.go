@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,22 +11,31 @@ import (
 )
 
 type CAPHandler struct {
-	etags map[string]string
-	deps  map[string][]string
+	etags           map[string]string
+	deps            map[string][]string
+	notFoundHandler http.Handler
 }
 
-func (c *CAPHandler) Send(rw http.ResponseWriter, f io.Reader, etag string) {
-	rw.WriteHeader(200)
-	rw.Header().Set("etag", etag)
-	// Setting cache to for 2 days
-	rw.Header().Set("cache-control", "public, max-age=172800") //Delete this line if implementing non-static site
-	io.Copy(rw, fil)
+func (c *CAPHandler) Send(rw http.ResponseWriter, f io.Reader) {
+	io.Copy(rw, f)
 }
 
-func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string, etag string) {
+func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string) {
 	f, err := os.Open(file)
 	if err == nil {
-		c.Send(rw, f, etag)
+		c.Send(rw, f)
+	}
+}
+
+func (c *CAPHandler) Etag(req *http.Request) (string, error) {
+	//search for etag
+	filename := req.URL.Path[1:]
+	etag, found := c.etags[filename]
+
+	if found {
+		return etag, nil
+	} else {
+		return nil, errors.New("File not found")
 	}
 }
 
@@ -35,8 +45,7 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	//not found, send not found
 	if !found {
-		rw.WriteHeader(404)
-		rw.Write([]byte("File not found!"))
+		c.notFoundHandler.ServeHTTP(rw, req)
 
 	} else /*found*/ {
 		rw.Write([]byte(etag))
@@ -52,8 +61,9 @@ func createHandler() http.Handler {
 	dep, _ := genDeps(set.Root)
 
 	handler := &CAPHandler{
-		etags: ets,
-		deps:  dep,
+		etags:           ets,
+		deps:            dep,
+		notFoundHandler: http.NotFoundHandler,
 	}
 
 	return handler
