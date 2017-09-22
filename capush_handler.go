@@ -3,7 +3,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,9 +10,9 @@ import (
 )
 
 type CAPHandler struct {
-	etags           map[string]string
-	deps            map[string][]string
-	notFoundHandler http.Handler
+	Etags           map[string]string
+	Deps            map[string][]string
+	NotFoundHandler http.Handler
 }
 
 func (c *CAPHandler) Send(rw http.ResponseWriter, f io.Reader) {
@@ -27,25 +26,14 @@ func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string) {
 	}
 }
 
-func (c *CAPHandler) Etag(req *http.Request) (string, error) {
-	//search for etag
-	filename := req.URL.Path[1:]
-	etag, found := c.etags[filename]
-
-	if found {
-		return etag, nil
-	} else {
-		return nil, errors.New("File not found")
-	}
-}
-
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	//search for etag
-	etag, found := c.etags[req.URL.Path[1:]]
+	filename := req.URL.Path[1:]
+	etag, found := c.Etags[filename]
 
 	//not found, send not found
 	if !found {
-		c.notFoundHandler.ServeHTTP(rw, req)
+		c.NotFoundHandler.ServeHTTP(rw, req)
 
 	} else /*found*/ {
 		rw.Write([]byte(etag))
@@ -61,9 +49,9 @@ func createHandler() http.Handler {
 	dep, _ := genDeps(set.Root)
 
 	handler := &CAPHandler{
-		etags:           ets,
-		deps:            dep,
-		notFoundHandler: http.NotFoundHandler,
+		Etags:           ets,
+		Deps:            dep,
+		NotFoundHandler: http.NotFoundHandler,
 	}
 
 	return handler
