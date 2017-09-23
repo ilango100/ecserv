@@ -70,8 +70,16 @@ func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag strin
 	return mainchanged
 }
 
-func (c *CAPHandler) mimeType(filename string) string {
-	return mime.TypeByExtension(path.Ext(filename))
+func (c *CAPHandler) TypeAndSendFile(rw http.ResponseWriter, filename string) {
+	//Set content type
+	mime := mime.TypeByExtension(path.Ext(filename))
+	if mime != "" {
+		rw.Header().Set("content-type", mime)
+	}
+
+	//Write headers and send file
+	rw.WriteHeader(200)
+	c.SendFile(rw, filename)
 }
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -93,15 +101,7 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			//Write headers
 			rw.Header().Set("cache-control", "public, max-age=172800")
 
-			//Set content type
-			mime := c.mimeType(filename)
-			if mime != "" {
-				rw.Header().Set("content-type", mime)
-			}
-
-			//Send file
-			rw.WriteHeader(200)
-			c.SendFile(rw, path.Join(set.Root, filename))
+			c.TypeAndSendFile(rw, path.Join(set.Root, filename))
 
 		} else /*Check for update and send */ {
 			rw.WriteHeader(304)
