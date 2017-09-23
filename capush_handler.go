@@ -28,7 +28,7 @@ func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string) {
 	}
 }
 
-func (c *CAPHandler) PushDeps(rw http.ResponseWriter, filename string) {
+func (c *CAPHandler) PushAllDeps(rw http.ResponseWriter, filename string) {
 	deps, havedeps := c.Deps[filename]
 	if havedeps {
 		p, noerr := rw.(http.Pusher)
@@ -38,16 +38,46 @@ func (c *CAPHandler) PushDeps(rw http.ResponseWriter, filename string) {
 			}
 		}
 	}
+	rw.Header().Set("etag", c.Etags[filename])
 }
 
-func (c *CAPHandler) MimeType(filename string) string {
+func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag string) bool {
+	newetag := c.Etags[filename]
+
+	if len(oldetag)%3 != 0 || len(oldetag) != len(newetag) {
+		c.PushAllDeps(rw, filename)
+		return true
+	}
+	if oldetag == newetag {
+		return false
+	}
+	mainchanged := oldetag[:3] != newetag[:3]
+
+	deps, havedeps := c.Deps[filename]
+	if havedeps {
+		p, noerr := rw.(http.Pusher)
+		if noerr {
+			tl := len(newetag)
+			for i := 3; i < tl; i += 3 {
+				if oldetag[i:i+3] != newetag[i:i+3] {
+					p.Push("/"+deps[i/3-1], nil)
+				}
+			}
+		}
+	}
+
+	rw.Header().Set("etag", newetag)
+	return mainchanged
+}
+
+func (c *CAPHandler) mimeType(filename string) string {
 	return mime.TypeByExtension(path.Ext(filename))
 }
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	//search for etag
 	filename := req.URL.Path[1:]
-	etag, found := c.Etags[filename]
+	_, found := c.Etags[filename]
 
 	//not found, send not found
 	if !found {
@@ -58,14 +88,13 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 		//Fresh send
 		if !etf {
-			c.PushDeps(rw, filename)
+			c.PushAllDeps(rw, filename)
 
 			//Write headers
-			rw.Header().Set("etag", etag)
 			rw.Header().Set("cache-control", "public, max-age=172800")
 
 			//Set content type
-			mime := c.MimeType(filename)
+			mime := c.mimeType(filename)
 			if mime != "" {
 				rw.Header().Set("content-type", mime)
 			}
