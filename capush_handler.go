@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 )
 
 type CAPHandler struct {
@@ -38,7 +39,7 @@ func (c *CAPHandler) PushAllDeps(rw http.ResponseWriter, filename string) {
 			}
 		}
 	}
-	rw.Header().Set("etag", c.Etags[filename])
+	rw.Header().Set("etag", "\""+c.Etags[filename]+"\"")
 }
 
 func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag string) bool {
@@ -66,7 +67,7 @@ func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag strin
 		}
 	}
 
-	rw.Header().Set("etag", newetag)
+	rw.Header().Set("etag", "\""+newetag+"\"")
 	return mainchanged
 }
 
@@ -92,7 +93,8 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		c.NotFoundHandler.ServeHTTP(rw, req)
 
 	} else /*found*/ {
-		oldetag, etf := req.Header["If-None-Match"]
+		oldetags, etf := req.Header["If-None-Match"]
+		var oldetag string
 
 		//Fresh send
 		if !etf {
@@ -104,8 +106,19 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			c.TypeAndSendFile(rw, path.Join(set.Root, filename))
 
 		} else /*Check for update and send */ {
-			rw.WriteHeader(304)
-			rw.Write([]byte(oldetag[0]))
+
+			//Extract correct etag
+			oldetag = oldetags[0]
+			oldetag = strings.Trim(oldetag, "\" ")
+
+			//Push modified deps
+			if c.PushModDeps(rw, filename, oldetag) {
+				rw.Header().Set("cache-control", "public, max-age=172800")
+				c.TypeAndSendFile(rw, path.Join(set.Root, filename))
+
+			} else {
+				rw.WriteHeader(304)
+			}
 		}
 	}
 }
