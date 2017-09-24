@@ -56,7 +56,7 @@ The format of the `deps.json` should be like:
 	"page2.html" : ["script.js", "img1.png", "img2.jpg"]
 }
 ```
-Here index.html is the main file and style.css and script.js are the dependant files, which are to be pushed with index.html.
+Here index.html is the main file and style.css and script.js are the dependant files, which are to be pushed with index.html. If there is a subdirectory, create a `deps.json` file in the subdirectory separately.
 
 Now start the server, the server will take care of pushing the dependant files along with the main file. If the server detects the browser already has cached copy of style.css, it just pushes 304 Not Modified response, which also avoids the browser revalidating the cache. 
 
