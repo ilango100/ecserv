@@ -1,5 +1,3 @@
-// +build capush
-
 package main
 
 import (
@@ -15,20 +13,21 @@ import (
 type CAPHandler struct {
 	Etags           map[string]string
 	Deps            map[string][]string
+	Root            string
 	NotFoundHandler http.Handler
 }
 
-func (c *CAPHandler) Send(rw http.ResponseWriter, f io.Reader) {
+func (c *CAPHandler) send(rw http.ResponseWriter, f io.Reader) {
 	io.Copy(rw, f)
 }
 
-func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string) {
+func (c *CAPHandler) sendFile(rw http.ResponseWriter, file string) {
 	if f, err := os.Open(file); err == nil {
-		c.Send(rw, f)
+		c.send(rw, f)
 	}
 }
 
-func (c *CAPHandler) PushAllDeps(rw http.ResponseWriter, filename string) {
+func (c *CAPHandler) pushAllDeps(rw http.ResponseWriter, filename string) {
 	if deps, havedeps := c.Deps[filename]; havedeps {
 		p, noerr := rw.(http.Pusher)
 		if noerr {
@@ -40,11 +39,11 @@ func (c *CAPHandler) PushAllDeps(rw http.ResponseWriter, filename string) {
 	rw.Header().Set("etag", "\""+c.Etags[filename]+"\"")
 }
 
-func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag string) bool {
+func (c *CAPHandler) pushModDeps(rw http.ResponseWriter, filename, oldetag string) bool {
 	newetag := c.Etags[filename]
 
 	if len(oldetag)%3 != 0 || len(oldetag) != len(newetag) {
-		c.PushAllDeps(rw, filename)
+		c.pushAllDeps(rw, filename)
 		return true
 	}
 
@@ -68,7 +67,7 @@ func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag strin
 	return oldetag != newetag
 }
 
-func (c *CAPHandler) TypeAndSendFile(rw http.ResponseWriter, filename string) {
+func (c *CAPHandler) typeAndSendFile(rw http.ResponseWriter, filename string) {
 	//Set content type
 	mime := mime.TypeByExtension(path.Ext(filename))
 	if mime != "" {
@@ -77,12 +76,15 @@ func (c *CAPHandler) TypeAndSendFile(rw http.ResponseWriter, filename string) {
 
 	//Write headers and send file
 	rw.WriteHeader(200)
-	c.SendFile(rw, filename)
+	c.sendFile(rw, filename)
 }
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	//search for etag
+
+	//Set correct filename
 	filename := req.URL.Path[1:]
+
+	//search for etag
 	_, found := c.Etags[filename]
 
 	//not found, send not found
@@ -95,12 +97,12 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 		//Fresh send
 		if !etf {
-			c.PushAllDeps(rw, filename)
+			c.pushAllDeps(rw, filename)
 
 			//Write headers
 			rw.Header().Set("cache-control", "public, max-age=172800")
 
-			c.TypeAndSendFile(rw, path.Join(set.Root, filename))
+			c.typeAndSendFile(rw, path.Join(c.Root, filename))
 
 		} else /*Check for update and send */ {
 
@@ -109,9 +111,9 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			oldetag = strings.Trim(oldetag, "\" ")
 
 			//Push modified deps
-			if c.PushModDeps(rw, filename, oldetag) {
+			if c.pushModDeps(rw, filename, oldetag) {
 				rw.Header().Set("cache-control", "public, max-age=172800")
-				c.TypeAndSendFile(rw, path.Join(set.Root, filename))
+				c.typeAndSendFile(rw, path.Join(c.Root, filename))
 
 			} else {
 				rw.WriteHeader(304)
@@ -120,17 +122,18 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func createHandler() http.Handler {
-	ets, err := depEtags(set.Root)
+func createCAPHandler(root string) http.Handler {
+	ets, err := depEtags(root)
 	if err != nil {
-		fmt.Println("Error generating etags... Falling back to normal handler...")
-		return http.FileServer(http.Dir(set.Root))
+		fmt.Println("Push disabled: Error generating etags")
+		return http.FileServer(http.Dir(root))
 	}
-	dep, _ := genDeps(set.Root)
+	dep, _ := genDeps(root)
 
 	handler := &CAPHandler{
 		Etags:           ets,
 		Deps:            dep,
+		Root:            root,
 		NotFoundHandler: http.NotFoundHandler(),
 	}
 
