@@ -34,7 +34,7 @@ func depEtags(pth string) (map[string]string, error) {
 
 func genDeps(pth string) (map[string][]string, error) {
 	depfilename := path.Join(pth, "deps.json")
-	if inf, err := os.Stat(depfilename); err != nil && !inf.IsDir() {
+	if inf, err := os.Stat(depfilename); err != nil || !inf.IsDir() {
 		return nil, err
 	}
 	deps := make(map[string][]string)
