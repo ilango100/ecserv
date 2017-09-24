@@ -56,6 +56,9 @@ func genDeps(pth string) (map[string][]string, error) {
 		}
 	}
 
+	//Delete deps.json
+	delete(deps, "deps.json")
+
 	return deps, nil
 }
 
@@ -81,6 +84,9 @@ func genEtags(pth string) (map[string]string, error) {
 				etags[file.Name()] = tTag(file.ModTime())
 			}
 		}
+		//Delete deps.json
+		delete(etags, "deps.json")
+
 		return etags, nil
 	}
 	return nil, errors.New("Not a directory")
