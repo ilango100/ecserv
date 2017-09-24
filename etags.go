@@ -88,8 +88,8 @@ func genEtags(pth string) (map[string]string, error) {
 
 func tTag(t time.Time) string {
 	buf := make([]byte, 3, 3)
-	buf[0] = 64 + byte(t.Day())
-	buf[1] = 97 + byte(t.Hour())
-	buf[2] = 65 + byte(t.Minute())
+	buf[0] = 64 + byte(t.Day())    //A-Z[\]^_
+	buf[1] = 97 + byte(t.Hour())   //a-x
+	buf[2] = 65 + byte(t.Minute()) //A-Z[\]^_`a-z{|
 	return string(buf)
 }
