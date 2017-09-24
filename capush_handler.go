@@ -14,6 +14,7 @@ type CAPHandler struct {
 	Etags           map[string]string
 	Deps            map[string][]string
 	Root            string
+	IndexFile       string
 	NotFoundHandler http.Handler
 }
 
@@ -83,6 +84,9 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	//Set correct filename
 	filename := req.URL.Path[1:]
+	if filename == "" {
+		filename = c.IndexFile
+	}
 
 	//search for etag
 	_, found := c.Etags[filename]
@@ -134,6 +138,7 @@ func createCAPHandler(root string) http.Handler {
 		Etags:           ets,
 		Deps:            dep,
 		Root:            root,
+		IndexFile:       "index.html",
 		NotFoundHandler: http.NotFoundHandler(),
 	}
 
