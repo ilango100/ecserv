@@ -10,7 +10,7 @@ func createHandler() http.Handler {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/", http.FileServer(http.Dir(set.Root)))
+	mux.Handle("/", createCAPHandler(set.Root))
 
 	/*mux.HandleFunc("/ip",func(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
