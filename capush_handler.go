@@ -23,15 +23,13 @@ func (c *CAPHandler) Send(rw http.ResponseWriter, f io.Reader) {
 }
 
 func (c *CAPHandler) SendFile(rw http.ResponseWriter, file string) {
-	f, err := os.Open(file)
-	if err == nil {
+	if f, err := os.Open(file); err == nil {
 		c.Send(rw, f)
 	}
 }
 
 func (c *CAPHandler) PushAllDeps(rw http.ResponseWriter, filename string) {
-	deps, havedeps := c.Deps[filename]
-	if havedeps {
+	if deps, havedeps := c.Deps[filename]; havedeps {
 		p, noerr := rw.(http.Pusher)
 		if noerr {
 			for _, dep := range deps {
@@ -49,26 +47,25 @@ func (c *CAPHandler) PushModDeps(rw http.ResponseWriter, filename, oldetag strin
 		c.PushAllDeps(rw, filename)
 		return true
 	}
-	if oldetag == newetag {
-		return false
-	}
-	mainchanged := oldetag[:3] != newetag[:3]
 
-	deps, havedeps := c.Deps[filename]
-	if havedeps {
+	if deps, havedeps := c.Deps[filename]; havedeps {
 		p, noerr := rw.(http.Pusher)
 		if noerr {
 			tl := len(newetag)
 			for i := 3; i < tl; i += 3 {
 				if oldetag[i:i+3] != newetag[i:i+3] {
 					p.Push("/"+deps[i/3-1], nil)
+				} else {
+					h := http.Header(make(map[string][]string))
+					h.Set("If-None-Match", "\""+oldetag[i:i+3]+"\"")
+					p.Push("/"+deps[i/3-1], &http.PushOptions{Header: h})
 				}
 			}
 		}
 	}
 
 	rw.Header().Set("etag", "\""+newetag+"\"")
-	return mainchanged
+	return oldetag != newetag
 }
 
 func (c *CAPHandler) TypeAndSendFile(rw http.ResponseWriter, filename string) {
