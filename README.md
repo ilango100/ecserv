@@ -6,7 +6,8 @@
 ## Features of EcServ
 
 - Automatic SSL certificate aquisition from Let's Encrypt
-- Full HTTP/2.0. Optional support for HTTP/1.1 for redirection only.
+- Full HTTP/2.0. Support for HTTP/1.1 for redirection only.
+- Cache Aware Server Push (CAPush). Pushes the resources required for a page (stylesheet, script, etc.)
 
 ## How to use
 
@@ -41,6 +42,25 @@ Where
 - `cert` is the folder in which certificates are stored. Default recommended.
 - `domain` is your domain in which you want to set your website
 - `errlog` is the file in which error logs are written //Not implemented
+
+## Configuring CAPush
+
+Cache Aware Server is a feature for the modern HTTP/2 servers. It enables pushing the required resources like stylesheet, javascript, images etc., without the browser making additional round trip.
+
+To enable CAPush, just include `deps.json` file in your root directory.
+The format of the `deps.json` should be like:
+```
+{
+	"index.html" : ["style.css", "script.js"],
+	"page1.html" : ["style.css", "img1.png"],
+	"page2.html" : ["script.js", "img1.png", "img2.jpg"]
+}
+```
+Here index.html is the main file and style.css and script.js are the dependant files, which are to be pushed with index.html.
+
+Now start the server, the server will take care of pushing the dependant files along with the main file. If the server detects the browser already has cached copy of style.css, it just pushes 304 Not Modified response, which also avoids the browser revalidating the cache. 
+
+Internally, CAPush uses Etags to check for file updates. If you update a file, you need to restart the server (Will be updated soon). Due to CAPush, your site will be very fast. EcServ is one of the few servers that have implemented the Cache Aware Server Push mechanism.
 
 ## Extending / CGI
 
