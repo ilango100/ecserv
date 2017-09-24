@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"mime"
@@ -18,13 +19,23 @@ type CAPHandler struct {
 	NotFoundHandler http.Handler
 }
 
-func (c *CAPHandler) send(rw http.ResponseWriter, f io.Reader) {
-	io.Copy(rw, f)
+func (c *CAPHandler) send(rw http.ResponseWriter, f io.Reader, compr bool) {
+	if !compr {
+		rw.WriteHeader(200)
+		io.Copy(rw, f)
+	} else {
+		rw.Header().Set("Content-Encoding", "gzip")
+		rw.WriteHeader(200)
+		gz := gzip.NewWriter(rw)
+		io.Copy(gz, f)
+		gz.Close()
+	}
 }
 
-func (c *CAPHandler) sendFile(rw http.ResponseWriter, file string) {
+func (c *CAPHandler) sendFile(rw http.ResponseWriter, file string, compr bool) {
 	if f, err := os.Open(file); err == nil {
-		c.send(rw, f)
+		defer f.Close()
+		c.send(rw, f, compr)
 	}
 }
 
@@ -68,16 +79,15 @@ func (c *CAPHandler) pushModDeps(rw http.ResponseWriter, filename, oldetag strin
 	return oldetag != newetag
 }
 
-func (c *CAPHandler) typeAndSendFile(rw http.ResponseWriter, filename string) {
+func (c *CAPHandler) typeAndSendFile(rw http.ResponseWriter, filename string, compr bool) {
 	//Set content type
 	mime := mime.TypeByExtension(path.Ext(filename))
 	if mime != "" {
 		rw.Header().Set("content-type", mime)
 	}
 
-	//Write headers and send file
-	rw.WriteHeader(200)
-	c.sendFile(rw, filename)
+	//Send file
+	c.sendFile(rw, filename, compr)
 }
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -97,7 +107,11 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	} else /*found*/ {
 		oldetags, etf := req.Header["If-None-Match"]
-		var oldetag string
+
+		accenc, compr := req.Header["Accept-Encoding"]
+		if compr {
+			compr = strings.Contains(accenc[0], "gzip")
+		}
 
 		//Fresh send
 		if !etf {
@@ -106,18 +120,18 @@ func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			//Write headers
 			rw.Header().Set("cache-control", "public, max-age=172800")
 
-			c.typeAndSendFile(rw, path.Join(c.Root, filename))
+			c.typeAndSendFile(rw, path.Join(c.Root, filename), compr)
 
 		} else /*Check for update and send */ {
 
 			//Extract correct etag
-			oldetag = oldetags[0]
+			oldetag := oldetags[0]
 			oldetag = strings.Trim(oldetag, "\" ")
 
 			//Push modified deps
 			if c.pushModDeps(rw, filename, oldetag) {
 				rw.Header().Set("cache-control", "public, max-age=172800")
-				c.typeAndSendFile(rw, path.Join(c.Root, filename))
+				c.typeAndSendFile(rw, path.Join(c.Root, filename), compr)
 
 			} else {
 				rw.WriteHeader(304)
