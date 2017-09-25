@@ -9,6 +9,8 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync"
+	"time"
 )
 
 type CAPHandler struct {
@@ -17,6 +19,7 @@ type CAPHandler struct {
 	Root            string
 	IndexFile       string
 	NotFoundHandler http.Handler
+	sync.RWMutex
 }
 
 func (c *CAPHandler) send(rw http.ResponseWriter, f io.Reader, compr bool) {
@@ -92,6 +95,10 @@ func (c *CAPHandler) typeAndSendFile(rw http.ResponseWriter, filename string, co
 
 func (c *CAPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
+	//Read lock
+	c.RLock()
+	defer c.RUnlock()
+
 	//Set correct filename
 	filename := req.URL.Path[1:]
 	if filename == "" {
@@ -155,6 +162,22 @@ func createCAPHandler(root string) http.Handler {
 		IndexFile:       "index.html",
 		NotFoundHandler: http.NotFoundHandler(),
 	}
+
+	go func(c *CAPHandler) {
+		for {
+			etags, err := depEtags(c.Root)
+			if err != nil {
+				fmt.Println("Fatal: Error refreshing Etags...")
+				os.Exit(1)
+			}
+			deps, _ := genDeps(c.Root)
+			c.Lock()
+			c.Etags = etags
+			c.Deps = deps
+			c.Unlock()
+			time.Sleep(time.Minute)
+		}
+	}(handler)
 
 	return handler
 }

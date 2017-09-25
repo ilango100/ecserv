@@ -60,7 +60,7 @@ Here index.html is the main file and style.css and script.js are the dependant f
 
 Now start the server, the server will take care of pushing the dependant files along with the main file. If the server detects the browser already has cached copy of style.css, it just pushes 304 Not Modified response, which also avoids the browser revalidating the cache. 
 
-Internally, CAPush uses Etags to check for file updates. If you update a file, you need to restart the server (Will be updated soon). Due to CAPush, your site will be very fast. EcServ is one of the few servers that have implemented the Cache Aware Server Push mechanism.
+Internally, CAPush uses Etags to check for file updates. Due to CAPush, your site will be very fast. EcServ is one of the few servers that have implemented the Cache Aware Server Push mechanism.
 
 ## Extending / CGI
 
