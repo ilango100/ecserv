@@ -8,6 +8,7 @@
 - Automatic SSL certificate aquisition from Let's Encrypt
 - Full HTTP/2.0. Support for HTTP/1.1 for redirection only.
 - Cache Aware Server Push (CAPush). Pushes the resources required for a page (stylesheet, script, etc.)
+- Gzip compression support
 
 ## How to use
 
