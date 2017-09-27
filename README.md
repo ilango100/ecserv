@@ -39,9 +39,9 @@ After setup if you need to edit any settings, just edit the ecset file in the so
 
 Where 
 - `root` is your root directory in which you have to put your site files.
-- `email` is used for setting up account at Let's Encrypt
+- `email` is used for setting up account at Let's Encrypt.
 - `cert` is the folder in which certificates are stored. Default recommended.
-- `domain` is your domain in which you want to set your website
+- `domain` is your domain in which you want to set your website.
 - `errlog` is the file in which error logs are written //Not implemented
 
 ## Configuring CAPush
@@ -57,6 +57,16 @@ The format of the `deps.json` should be like:
 	"page2.html" : ["script.js", "img1.png", "img2.jpg"]
 }
 ```
+If you want to include your stylesheet and script in all your files, include a special name "global" with dependants:
+```
+{
+	"global" : ["style.css", "script.js"],
+	"page1.html" : ["img1.png"],
+	"page2.html" : ["img1.png", img2.jpg"]
+}
+```
+Now, style.css and script.js will be pushed with all the main files automatically.
+
 Here index.html is the main file and style.css and script.js are the dependant files, which are to be pushed with index.html. If there is a subdirectory, create a `deps.json` file in the subdirectory separately.
 
 Now start the server, the server will take care of pushing the dependant files along with the main file. If the server detects the browser already has cached copy of style.css, it just pushes 304 Not Modified response, which also avoids the browser revalidating the cache. 
